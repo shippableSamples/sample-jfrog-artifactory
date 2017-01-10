@@ -1,0 +1,147 @@
+jobs:
+########################## NATIVE WAR CI/CD JOBS #########################
+# manifest that defines the Native WAR service definition
+  - name: demo-war-manifest
+    type: manifest
+    steps:
+      - IN: demo-war
+      - IN: demo-war-trg
+      - IN: demo-war-params1
+
+# deploy job that deploys native war to cluster of VMs
+  - name: demo-war-test-deploy
+    type: deploy
+    steps:
+      - IN: demo-war-manifest
+        force: true
+      - IN: demo-war-test-cls
+      - TASK:
+        - script: sudo rm -rf /opt/tomcat/webapps/HelloWorld.war
+        - script: sudo cp /tmp/shippable/demo-war-manifest/demo-war/HelloWorld.war /opt/tomcat/webapps/HelloWorld.war
+
+########################## INFRA AUTOMATION JOBS #########################
+## job to create AWS AMI used to deploy VMs
+#  - name: build-ami
+#    type: runSh
+#    steps:
+#      - IN: aws-creds
+#      - IN: bldami-repo
+#      - IN: bldami-params
+#      - TASK:
+#        - script: sudo apt-get install -y jq
+#        - script: IN/bldami-repo/gitRepo/basePack.sh bldami-params
+#    on_success:
+#      - script: echo "SUCCESS"
+#    on_failure:
+#      - script: cat /build/IN/bldami-repo/gitRepo/output.txt
+#
+## job to setup AWS IAM roles, profiles etc.
+#  - name: aws-infra-setup
+#    type: runSh
+#    steps:
+#      - IN: aws-pem
+#      - IN: aws-creds
+#      - IN: setup-infra-repo
+#      - IN: build-ami
+#        switch: off
+#      - TASK:
+#        - script: sudo apt-get install -y jq
+#        - script: IN/setup-infra-repo/gitRepo/build.sh
+#    on_success:
+#      - script: /build/IN/setup-infra-repo/gitRepo/archiveState.sh
+#    on_failure:
+#      - script: /build/IN/setup-infra-repo/gitRepo/archiveState.sh
+#
+## job to provision TEST VMs and ECS cluster
+#  - name: test-infra-prov
+#    type: runSh
+#    steps:
+#      - IN: aws-pem
+#      - IN: aws-creds
+#      - IN: test-infra-repo
+#      - IN: aws-infra-setup
+#      - TASK:
+#        - script: sudo apt-get install -y jq
+#        - script: IN/test-infra-repo/gitRepo/build.sh
+#    on_success:
+#      - script: /build/IN/test-infra-repo/gitRepo/archiveState.sh
+#    on_failure:
+#      - script: /build/IN/test-infra-repo/gitRepo/archiveState.sh
+#
+## job to provision PROD VMs and ECS cluster
+#  - name: prod-infra-prov
+#    type: runSh
+#    steps:
+#      - IN: aws-pem
+#      - IN: aws-creds
+#      - IN: prod-infra-repo
+#      - IN: aws-infra-setup
+#      - IN: build-ami
+#        switch: off
+#      - TASK:
+#        - script: sudo apt-get install -y jq
+#        - script: IN/prod-infra-repo/gitRepo/build.sh
+#    on_success:
+#      - script: /build/IN/prod-infra-repo/gitRepo/archiveState.sh
+#    on_failure:
+#      - script: /build/IN/prod-infra-repo/gitRepo/archiveState.sh
+
+###################### DOCKER Based WAR CI/CD JOBS #######################
+## package sample WAR into docker container
+#  - name: build-doc-war
+#    type: runSh
+#    steps:
+#      - IN: docker-creds
+#      - IN: demo-doc-repo
+#      - TASK:
+#        - script: sudo apt-get install -y jq
+#        - script: IN/demo-doc-repo/gitRepo/build.sh
+#      - OUT: demo-doc-img
+#    on_success:
+#      - script: echo "SUCCESS"
+#    on_failure:
+#      - script: echo "FAILED"
+#
+##  manifest that defines the DOCKER WAR service definition
+#  - name: demo-doc-man
+#    type: manifest
+#    steps:
+#      - IN: demo-doc-img
+#      - IN: doc-img-opts
+#      - IN: test-infra-prov
+#
+## deploy job that deploys native war to TEST ECS Cluster
+#  - name: demo-doc-test
+#    type: deploy
+#    steps:
+#      - IN: demo-doc-man
+#      - IN: env-test-aws
+#      - TASK: managed
+#
+## deploy job that deploys native war to PROD ECS Cluster
+#  - name: demo-doc-prod
+#    type: deploy
+#    steps:
+#      - IN: prod-infra-prov
+#        switch: off
+#      - IN: doc-p-scaler
+#      - IN: demo-doc-test
+#        switch: off
+#      - IN: env-prod-aws
+#      - TASK: managed
+#
+########################## WAR SIT JOBS #########################
+## job to run SIT testing
+#  - name: sit
+#    type: runSh
+#    steps:
+#      - IN: sit-repo
+#      - IN: demo-doc-test
+#      - IN: sit-params
+#      - TASK:
+#        - script: sudo apt-get install -y jq
+#        - script: IN/sit-repo/gitRepo/test.sh sit-params
+#    on_success:
+#      - script: touch /build/state/success.txt
+#    on_failure:
+#      - script: touch /build/state/failure.txt
