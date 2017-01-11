@@ -15,7 +15,6 @@ build:
     - sudo tar xzf apache-maven-3.3.9-bin.tar.gz -C /usr/local && rm -f apache-maven-3.3.9-bin.tar.gz
     - ln -fs /usr/local/apache-maven-$3.3.9/bin/mvn /usr/bin
     - echo "export PATH=$PATH:/usr/local/apache-maven-3.3.9/bin" >> $HOME/.bashrc
-    - wget http://138.197.80.53:8080/docs/appdev/sample/sample.war
     - mkdir -p shippable/testresults && mkdir -p shippable/codecoverage
     - /usr/local/apache-maven-3.3.9/bin/mvn -q -B clean cobertura:cobertura install
     - ls -al $SHIPPABLE_BUILD_DIR/target
@@ -24,12 +23,12 @@ build:
 
 integrations:
   hub:
-    - integrationName: avinci-jf
+    - integrationName: #your artifactory integration name
       type: artifactory
 
-  notifications:
-    - integrationName: demo-jar-trg
-      type: webhook
-      payload:
-        - versionName=$BUILD_NUMBER
-      on_success: always
+  # notifications:
+  #   - integrationName: #your event trigger integration name
+  #     type: webhook
+  #     payload:
+  #       - versionName=$BUILD_NUMBER
+  #     on_success: always
